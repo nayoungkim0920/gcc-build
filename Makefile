@@ -57,7 +57,7 @@ sbindir = ${exec_prefix}/sbin
 libexecdir = ${exec_prefix}/libexec
 datadir = ${datarootdir}
 sysconfdir = ${prefix}/etc
-sharedstatedir = /desired/path/com
+sharedstatedir = ${prefix}/com
 localstatedir = ${prefix}/var
 libdir = ${exec_prefix}/lib
 includedir = ${prefix}/include
@@ -93,7 +93,7 @@ MAINTAINER_MODE_TRUE = #
 # -------------------------------------------------
 
 # The gcc driver likes to know the arguments it was configured with.
-TOPLEVEL_CONFIGURE_ARGUMENTS=../gcc-14.2.0/configure LDFLAGS='-L/mingw64/lib/gcc/x86_64-w64-mingw32/14.2.0 -L/mingw64/lib -L/usr/lib -L/mingw64/x86_64-w64-mingw32/lib -L/c/libidn2/gettext-0.22.5/libtextstyle/lib -Wl,-rpath,/mingw64/bin' CPP=/mingw64/bin/cpp --prefix=/mingw64 --enable-languages=c,c++ --enable-threads=posix --sharedstatedir=/desired/path/com
+TOPLEVEL_CONFIGURE_ARGUMENTS=../gcc-14.2.0/configure --prefix=/mingw64
 
 tooldir = ${exec_prefix}/x86_64-w64-mingw32
 build_tooldir = ${exec_prefix}/x86_64-w64-mingw32
@@ -114,7 +114,7 @@ host_shared = no
 BUILD_SUBDIR = build-x86_64-w64-mingw32
 # This is set by the configure script to the arguments to use when configuring
 # directories built for the build system.
-BUILD_CONFIGARGS =  --cache-file=./config.cache '--prefix=/mingw64' '--enable-threads=posix' '--sharedstatedir=/desired/path/com' '--enable-languages=c,c++,lto' --program-transform-name='s,y,y,' --disable-option-checking --with-build-subdir="$(BUILD_SUBDIR)"
+BUILD_CONFIGARGS =  --cache-file=./config.cache '--prefix=/mingw64' '--enable-languages=c,c++,fortran,lto,objc' --program-transform-name='s,y,y,' --disable-option-checking --with-build-subdir="$(BUILD_SUBDIR)"
 
 # Linker flags to use on the host, for stage1 or when not
 # bootstrapping.
@@ -181,10 +181,10 @@ EXTRA_BUILD_FLAGS = \
 
 # This is the list of directories to built for the host system.
 SUBDIRS =  libiberty zlib libbacktrace libcpp libcody libdecnumber fixincludes gcc libcc1 c++tools lto-plugin
-TARGET_CONFIGDIRS =  libgcc libatomic libstdc++-v3 libvtv libssp libquadmath
+TARGET_CONFIGDIRS =  libgcc libbacktrace libatomic libstdc++-v3 libvtv libssp libquadmath libgfortran libobjc
 # This is set by the configure script to the arguments to use when configuring
 # directories built for the host system.
-HOST_CONFIGARGS =  --cache-file=./config.cache  '--prefix=/mingw64' '--enable-threads=posix' '--sharedstatedir=/desired/path/com' '--enable-languages=c,c++,lto' --program-transform-name='s,y,y,' --disable-option-checking
+HOST_CONFIGARGS =  --cache-file=./config.cache  '--prefix=/mingw64' '--enable-languages=c,c++,fortran,lto,objc' --program-transform-name='s,y,y,' --disable-option-checking
 # Host programs are put under this directory, which is . except if building
 # with srcdir=..
 HOST_SUBDIR = .
@@ -288,7 +288,7 @@ POSTSTAGE1_HOST_EXPORTS = \
 TARGET_SUBDIR = x86_64-w64-mingw32
 # This is set by the configure script to the arguments to use when configuring
 # directories built for the target.
-TARGET_CONFIGARGS = --cache-file=./config.cache --enable-multilib   '--prefix=/mingw64' '--enable-threads=posix' '--sharedstatedir=/desired/path/com' '--enable-languages=c,c++,lto' --program-transform-name='s,y,y,' --disable-option-checking --disable-year2038 --with-target-subdir="$(TARGET_SUBDIR)"
+TARGET_CONFIGARGS = --cache-file=./config.cache --enable-multilib   '--prefix=/mingw64' '--enable-languages=c,c++,fortran,lto,objc' --program-transform-name='s,y,y,' --disable-option-checking --disable-year2038 --with-target-subdir="$(TARGET_SUBDIR)"
 # This is the list of variables to export in the environment when
 # configuring subdirectories for the target system.
 BASE_TARGET_EXPORTS = \
@@ -352,7 +352,8 @@ SHELL = /bin/sh
 # subprocesses and overrides the setting from the user's environment.
 # Don't use PWD since it is a common shell environment variable and we
 # don't want to corrupt it.
-PWD_COMMAND = $${PWDCMD-pwd}
+# PWD_COMMAND = $${PWDCMD-pwd} 20241103
+PWD_COMMAND=pwd # /c/gcc-build
 
 # compilers to use to create programs which must be run in the build
 # environment.
@@ -384,7 +385,7 @@ BUILD_PREFIX_1 = @BUILD_PREFIX_1@
 
 # Flags to pass to stage2 and later makes.  They are defined
 # here so that they can be overridden by Makefile fragments.
-BOOT_CFLAGS= -g #-O2 20241101
+BOOT_CFLAGS= -g -O2
 BOOT_LDFLAGS=
 BOOT_ADAFLAGS= -gnatpg
 
@@ -598,7 +599,7 @@ STAGE1_CONFIGURE_FLAGS = --disable-intermodule $(STAGE1_CHECKING) \
 # stage2 and stage3 we are merely avoid doing redundant work, plus we apply
 # checking when building all target libraries for release builds.
 STAGE1_TFLAGS += -fno-checking
-#STAGE2_CFLAGS += -fno-checking 20241101
+STAGE2_CFLAGS += -fno-checking
 STAGE2_TFLAGS += -fno-checking
 STAGE3_CFLAGS += -fchecking=1
 STAGE3_TFLAGS += -fchecking=1
@@ -643,7 +644,7 @@ CC_FOR_TARGET=$(STAGE_CC_WRAPPER) $$r/$(HOST_SUBDIR)/gcc/xgcc -B$$r/$(HOST_SUBDI
 GCC_FOR_TARGET=$(STAGE_CC_WRAPPER) $$r/$(HOST_SUBDIR)/gcc/xgcc -B$$r/$(HOST_SUBDIR)/gcc/
 CXX_FOR_TARGET=$(STAGE_CC_WRAPPER) $$r/$(HOST_SUBDIR)/gcc/xg++ -B$$r/$(HOST_SUBDIR)/gcc/ -nostdinc++ `if test -f $$r/$(TARGET_SUBDIR)/libstdc++-v3/scripts/testsuite_flags; then $(SHELL) $$r/$(TARGET_SUBDIR)/libstdc++-v3/scripts/testsuite_flags --build-includes; else echo -funconfigured-libstdc++-v3 ; fi` -L$$r/$(TARGET_SUBDIR)/libstdc++-v3/src -L$$r/$(TARGET_SUBDIR)/libstdc++-v3/src/.libs -L$$r/$(TARGET_SUBDIR)/libstdc++-v3/libsupc++/.libs
 RAW_CXX_FOR_TARGET=$(STAGE_CC_WRAPPER) $$r/$(HOST_SUBDIR)/gcc/xgcc -shared-libgcc -B$$r/$(HOST_SUBDIR)/gcc -nostdinc++ -L$$r/$(TARGET_SUBDIR)/libstdc++-v3/src -L$$r/$(TARGET_SUBDIR)/libstdc++-v3/src/.libs -L$$r/$(TARGET_SUBDIR)/libstdc++-v3/libsupc++/.libs
-GFORTRAN_FOR_TARGET=$(STAGE_CC_WRAPPER) $(GFORTRAN)
+GFORTRAN_FOR_TARGET=$(STAGE_CC_WRAPPER) $$r/$(HOST_SUBDIR)/gcc/gfortran -B$$r/$(HOST_SUBDIR)/gcc/
 GOC_FOR_TARGET=$(STAGE_CC_WRAPPER) $(GOC)
 GDC_FOR_TARGET=$(STAGE_CC_WRAPPER) $(GDC)
 GM2_FOR_TARGET=$(STAGE_CC_WRAPPER) $(GM2)
@@ -693,7 +694,7 @@ all:
 #### host and target specific makefile fragments come in here.
 # Add -D__USE_MINGW_ACCESS to enable the built compiler to work on Windows
 # Vista (see PR33281 for details).
-#BOOT_CFLAGS += -D__USE_MINGW_ACCESS -Wno-pedantic-ms-format 20241101
+BOOT_CFLAGS += -D__USE_MINGW_ACCESS -Wno-pedantic-ms-format
 CFLAGS += -D__USE_MINGW_ACCESS
 CXXFLAGS += -D__USE_MINGW_ACCESS
 STAGE1_CXXFLAGS += -D__USE_MINGW_ACCESS
@@ -1105,22 +1106,22 @@ configure-target:  \
 # 2. Use "make maybe-check-*" to generate profiling data.
 # 3. Use "make clean" to remove the previous build.
 # 4. Rebuild with -fprofile-use.
-.PHONY: all-stage2 clean-stage2
-do-clean: clean-stage2
-
 all:
 	[ -f stage_final ] || echo stage3 > stage_final
-	@r=`${PWD_COMMAND}`; export r; \
-	s=`cd $(srcdir) && ${PWD_COMMAND}`; export s; \
-	$(MAKE) $(RECURSE_FLAGS_TO_PASS) $$(shell cat stage_final)-bubble
+	r=$(shell $(PWD_COMMAND)); export $r; \
+	@echo "r: $r"	
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(MAKE) $(RECURSE_FLAGS_TO_PASS) `cat stage_final`-bubble
+	@: $(MAKE); $(unstage)
 	+@r=`${PWD_COMMAND}`; export r; \
-	s=`cd $(srcdir) && ${PWD_COMMAND}`; export s; \
-	if [ -f stage_last ]; then \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	if [ -f stage_last ]; then \f
 	  TFLAGS="$(STAGE$(shell test ! -f stage_last || sed s,^stage,, stage_last)_TFLAGS)"; \
 	  $(MAKE) $(TARGET_FLAGS_TO_PASS) all-host all-target; \
 	else \
 	  $(MAKE) $(RECURSE_FLAGS_TO_PASS) \
-		$(PGO_BUILD_GEN_FLAGS_TO_PASS) all-host all-target; \
+		$(PGO_BUILD_GEN_FLAGS_TO_PASS) all-host all-target \
+	    ; \
 	fi \
 	&& :
 
@@ -1172,6 +1173,7 @@ all-host: maybe-all-gotools
 all-target: maybe-all-target-libvtv
 all-target: maybe-all-target-libssp
 all-target: maybe-all-target-newlib
+all-target: maybe-all-target-libbacktrace
 all-target: maybe-all-target-libquadmath
 all-target: maybe-all-target-libgfortran
 all-target: maybe-all-target-libobjc
@@ -4983,7 +4985,7 @@ configure-stageautoprofile-gcc:
 	$(POSTSTAGE1_HOST_EXPORTS) \
 	CFLAGS="$(STAGEautoprofile_CFLAGS)"; export CFLAGS; \
 	CXXFLAGS="$(STAGEautoprofile_CXXFLAGS)"; export CXXFLAGS; \
-	LIBCFLAGS="$(STAGEautoprofile_CFLAGS)"; export LIBCFLAGS;  \ #20241101
+	LIBCFLAGS="$(STAGEautoprofile_CFLAGS)"; export LIBCFLAGS;  \
 	echo Configuring stage autoprofile in $(HOST_SUBDIR)/gcc; \
 	$(SHELL) $(srcdir)/mkinstalldirs $(HOST_SUBDIR)/gcc; \
 	cd $(HOST_SUBDIR)/gcc || exit 1; \
@@ -11649,23 +11651,24 @@ all-stage1: all-stage1-libiberty
 TARGET-stage1-libiberty = $(TARGET-libiberty)
 all-stage1-libiberty: configure-stage1-libiberty
 	@[ $(current_stage) = stage1 ] || $(MAKE) stage1-start
-    @r=${PWD_COMMAND}; export r; \
-    s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
-    TFLAGS="$(STAGE1_TFLAGS)"; \
-    $(HOST_EXPORTS)  \
-    cd $(HOST_SUBDIR)/libiberty && \
-    $(MAKE) $(BASE_FLAGS_TO_PASS) \
-        CFLAGS="$(STAGE1_CFLAGS)" \
-        GENERATOR_CFLAGS="$(STAGE1_GENERATOR_CFLAGS)" \
-        CXXFLAGS="$(STAGE1_CXXFLAGS)" \
-        LIBCFLAGS="$(LIBCFLAGS)" \
-        CFLAGS_FOR_TARGET="$(CFLAGS_FOR_TARGET)" \
-        CXXFLAGS_FOR_TARGET="$(CXXFLAGS_FOR_TARGET)" \
-        LIBCFLAGS_FOR_TARGET="$(LIBCFLAGS_FOR_TARGET)" \
-        $(EXTRA_HOST_FLAGS)  \
-        $(STAGE1_FLAGS_TO_PASS)  \
-        TFLAGS="$(STAGE1_TFLAGS)"  \
-        $(TARGET-stage1-libiberty)
+	@r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	TFLAGS="$(STAGE1_TFLAGS)"; \
+	$(HOST_EXPORTS)  \
+	cd $(HOST_SUBDIR)/libiberty && \
+	 \
+	$(MAKE) $(BASE_FLAGS_TO_PASS) \
+		CFLAGS="$(STAGE1_CFLAGS)" \
+		GENERATOR_CFLAGS="$(STAGE1_GENERATOR_CFLAGS)" \
+		CXXFLAGS="$(STAGE1_CXXFLAGS)" \
+		LIBCFLAGS="$(LIBCFLAGS)" \
+		CFLAGS_FOR_TARGET="$(CFLAGS_FOR_TARGET)" \
+		CXXFLAGS_FOR_TARGET="$(CXXFLAGS_FOR_TARGET)" \
+		LIBCFLAGS_FOR_TARGET="$(LIBCFLAGS_FOR_TARGET)" \
+		$(EXTRA_HOST_FLAGS)  \
+		$(STAGE1_FLAGS_TO_PASS)  \
+		TFLAGS="$(STAGE1_TFLAGS)"  \
+		$(TARGET-stage1-libiberty)
 
 maybe-clean-stage1-libiberty: clean-stage1-libiberty
 clean-stage1: clean-stage1-libiberty
@@ -15261,56 +15264,34 @@ configure-stage1-lto-plugin:
 .PHONY: configure-stage2-lto-plugin maybe-configure-stage2-lto-plugin
 maybe-configure-stage2-lto-plugin:
 maybe-configure-stage2-lto-plugin: configure-stage2-lto-plugin
-
 configure-stage2-lto-plugin:
 	@[ $(current_stage) = stage2 ] || $(MAKE) stage2-start
-	@echo "Running mkinstalldirs for lto-plugin..."
-	@echo "mkinstalldirs path: $(srcdir)/mkinstalldirs"
-	@echo "HOST_SUBDIR: $(HOST_SUBDIR)"
-	@$(SHELL) $(srcdir)/mkinstalldirs $(HOST_SUBDIR)/lto-plugin || { echo "mkinstalldirs failed"; exit 1; }
-
-	@export r=`pwd`;
-	@export s=`cd $(srcdir) && pwd`;
-
-	@echo "TFLAGS: $(STAGE2_TFLAGS)"
-	export TFLAGS=$(STAGE2_TFLAGS)
-
-	@test ! -f $(HOST_SUBDIR)/lto-plugin/Makefile || exit 0;
-	$(HOST_EXPORTS)
-	$(POSTSTAGE1_HOST_EXPORTS)
-
-	CFLAGS=-g 
-	export CFLAGS
-	CXXFLAGS=-g 
-	export CXXFLAGS
-	#STAGE2_CFLAGS := $(filter-out -gtoggle, $(STAGE2_CFLAGS))
-	#export LIBCFLAGS=$(STAGE2_CFLAGS)
-	STAGE2_CFLAGS=-g
-	export STAGE2_CFLAGS
-
-	@echo "Configuring stage 2 in $(HOST_SUBDIR)/lto-plugin"
-	@cd $(HOST_SUBDIR)/lto-plugin || exit 1;
-
-	case $(srcdir) in
-		/* | [A-Za-z]:[\\/]*) topdir=$(srcdir) ;;
-		*) topdir=`echo $(HOST_SUBDIR)/lto-plugin/ | sed -e 's,\./,,g' -e 's,[^/]*/,../,g'` ;;
-	esac;
-
-	module_srcdir=lto-plugin;
+	@$(SHELL) $(srcdir)/mkinstalldirs $(HOST_SUBDIR)/lto-plugin
+	@r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	TFLAGS="$(STAGE2_TFLAGS)"; \
+	test ! -f $(HOST_SUBDIR)/lto-plugin/Makefile || exit 0; \
+	$(HOST_EXPORTS) \
+	$(POSTSTAGE1_HOST_EXPORTS) \
+	CFLAGS="$(STAGE2_CFLAGS)"; export CFLAGS; \
+	CXXFLAGS="$(STAGE2_CXXFLAGS)"; export CXXFLAGS; \
+	LIBCFLAGS="$(STAGE2_CFLAGS)"; export LIBCFLAGS;  \
+	echo Configuring stage 2 in $(HOST_SUBDIR)/lto-plugin; \
+	$(SHELL) $(srcdir)/mkinstalldirs $(HOST_SUBDIR)/lto-plugin; \
+	cd $(HOST_SUBDIR)/lto-plugin || exit 1; \
+	case $(srcdir) in \
+	  /* | [A-Za-z]:[\\/]*) topdir=$(srcdir) ;; \
+	  *) topdir=`echo $(HOST_SUBDIR)/lto-plugin/ | \
+		sed -e 's,\./,,g' -e 's,[^/]*/,../,g' `$(srcdir) ;; \
+	esac; \
+	module_srcdir=lto-plugin; \
 	$(SHELL) $$s/$$module_srcdir/configure \
-		--srcdir=$${topdir}/$$module_srcdir \
-		$(HOST_CONFIGARGS) --build=${build_alias} --host=${host_alias} \
-		--target=${target_alias} \
-		--with-build-libsubdir=$(HOST_SUBDIR) \
-		$(STAGE2_CONFIGURE_FLAGS) \
-		--enable-shared
-
-
-
-
-
-
-
+	  --srcdir=$${topdir}/$$module_srcdir \
+	  $(HOST_CONFIGARGS) --build=${build_alias} --host=${host_alias} \
+	  --target=${target_alias} \
+	  --with-build-libsubdir=$(HOST_SUBDIR) \
+	  $(STAGE2_CONFIGURE_FLAGS) \
+	  --enable-shared  
 
 .PHONY: configure-stage3-lto-plugin maybe-configure-stage3-lto-plugin
 maybe-configure-stage3-lto-plugin:
@@ -20810,6 +20791,41 @@ maintainer-clean-target-libgcc:
 .PHONY: configure-target-libbacktrace maybe-configure-target-libbacktrace
 maybe-configure-target-libbacktrace:
 configure-target-libbacktrace: stage_current
+maybe-configure-target-libbacktrace: configure-target-libbacktrace
+configure-target-libbacktrace: 
+	@r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	echo "Checking multilib configuration for libbacktrace..."; \
+	$(SHELL) $(srcdir)/mkinstalldirs $(TARGET_SUBDIR)/libbacktrace; \
+	$(CC_FOR_TARGET) --print-multi-lib > $(TARGET_SUBDIR)/libbacktrace/multilib.tmp 2> /dev/null; \
+	if test -r $(TARGET_SUBDIR)/libbacktrace/multilib.out; then \
+	  if cmp -s $(TARGET_SUBDIR)/libbacktrace/multilib.tmp $(TARGET_SUBDIR)/libbacktrace/multilib.out; then \
+	    rm -f $(TARGET_SUBDIR)/libbacktrace/multilib.tmp; \
+	  else \
+	    rm -f $(TARGET_SUBDIR)/libbacktrace/Makefile; \
+	    mv $(TARGET_SUBDIR)/libbacktrace/multilib.tmp $(TARGET_SUBDIR)/libbacktrace/multilib.out; \
+	  fi; \
+	else \
+	  mv $(TARGET_SUBDIR)/libbacktrace/multilib.tmp $(TARGET_SUBDIR)/libbacktrace/multilib.out; \
+	fi; \
+	test ! -f $(TARGET_SUBDIR)/libbacktrace/Makefile || exit 0; \
+	$(SHELL) $(srcdir)/mkinstalldirs $(TARGET_SUBDIR)/libbacktrace; \
+	$(NORMAL_TARGET_EXPORTS)  \
+	echo Configuring in $(TARGET_SUBDIR)/libbacktrace; \
+	cd "$(TARGET_SUBDIR)/libbacktrace" || exit 1; \
+	case $(srcdir) in \
+	  /* | [A-Za-z]:[\\/]*) topdir=$(srcdir) ;; \
+	  *) topdir=`echo $(TARGET_SUBDIR)/libbacktrace/ | \
+		sed -e 's,\./,,g' -e 's,[^/]*/,../,g' `$(srcdir) ;; \
+	esac; \
+	module_srcdir=libbacktrace; \
+	rm -f no-such-file || : ; \
+	CONFIG_SITE=no-such-file $(SHELL) \
+	  $$s/$$module_srcdir/configure \
+	  --srcdir=$${topdir}/$$module_srcdir \
+	  $(TARGET_CONFIGARGS) --build=${build_alias} --host=${target_alias} \
+	  --target=${target_alias}  \
+	  || exit 1
 
 
 
@@ -20847,6 +20863,15 @@ maybe-configure-stageautofeedback-target-libbacktrace:
 .PHONY: all-target-libbacktrace maybe-all-target-libbacktrace
 maybe-all-target-libbacktrace:
 all-target-libbacktrace: stage_current
+TARGET-target-libbacktrace=all
+maybe-all-target-libbacktrace: all-target-libbacktrace
+all-target-libbacktrace: configure-target-libbacktrace
+	@r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS)  \
+	(cd $(TARGET_SUBDIR)/libbacktrace && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) $(EXTRA_TARGET_FLAGS)   \
+		$(TARGET-target-libbacktrace))
 
 
 
@@ -20910,56 +20935,380 @@ maybe-clean-stageautofeedback-target-libbacktrace:
 
 .PHONY: check-target-libbacktrace maybe-check-target-libbacktrace
 maybe-check-target-libbacktrace:
+maybe-check-target-libbacktrace: check-target-libbacktrace
+
+check-target-libbacktrace:
+	@: $(MAKE); $(unstage)
+	@r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	(cd $(TARGET_SUBDIR)/libbacktrace && \
+	  $(MAKE) $(TARGET_FLAGS_TO_PASS)   check)
+
 
 .PHONY: install-target-libbacktrace maybe-install-target-libbacktrace
 maybe-install-target-libbacktrace:
+maybe-install-target-libbacktrace: install-target-libbacktrace
+
+install-target-libbacktrace: installdirs
+	@: $(MAKE); $(unstage)
+	@r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	(cd $(TARGET_SUBDIR)/libbacktrace && \
+	  $(MAKE) $(TARGET_FLAGS_TO_PASS)  install)
+
 
 .PHONY: install-strip-target-libbacktrace maybe-install-strip-target-libbacktrace
 maybe-install-strip-target-libbacktrace:
+maybe-install-strip-target-libbacktrace: install-strip-target-libbacktrace
+
+install-strip-target-libbacktrace: installdirs
+	@: $(MAKE); $(unstage)
+	@r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	(cd $(TARGET_SUBDIR)/libbacktrace && \
+	  $(MAKE) $(TARGET_FLAGS_TO_PASS)  install-strip)
+
 
 # Other targets (info, dvi, pdf, etc.)
 
 .PHONY: maybe-info-target-libbacktrace info-target-libbacktrace
 maybe-info-target-libbacktrace:
+maybe-info-target-libbacktrace: info-target-libbacktrace
+
+info-target-libbacktrace: \
+    configure-target-libbacktrace 
+	@: $(MAKE); $(unstage)
+	@[ -f $(TARGET_SUBDIR)/libbacktrace/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	echo "Doing info in $(TARGET_SUBDIR)/libbacktrace"; \
+	for flag in $(EXTRA_TARGET_FLAGS); do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	(cd $(TARGET_SUBDIR)/libbacktrace && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	           info) \
+	  || exit 1
+
 
 .PHONY: maybe-dvi-target-libbacktrace dvi-target-libbacktrace
 maybe-dvi-target-libbacktrace:
+maybe-dvi-target-libbacktrace: dvi-target-libbacktrace
+
+dvi-target-libbacktrace: \
+    configure-target-libbacktrace 
+	@: $(MAKE); $(unstage)
+	@[ -f $(TARGET_SUBDIR)/libbacktrace/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	echo "Doing dvi in $(TARGET_SUBDIR)/libbacktrace"; \
+	for flag in $(EXTRA_TARGET_FLAGS); do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	(cd $(TARGET_SUBDIR)/libbacktrace && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	           dvi) \
+	  || exit 1
+
 
 .PHONY: maybe-pdf-target-libbacktrace pdf-target-libbacktrace
 maybe-pdf-target-libbacktrace:
+maybe-pdf-target-libbacktrace: pdf-target-libbacktrace
+
+pdf-target-libbacktrace: \
+    configure-target-libbacktrace 
+	@: $(MAKE); $(unstage)
+	@[ -f $(TARGET_SUBDIR)/libbacktrace/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	echo "Doing pdf in $(TARGET_SUBDIR)/libbacktrace"; \
+	for flag in $(EXTRA_TARGET_FLAGS); do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	(cd $(TARGET_SUBDIR)/libbacktrace && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	           pdf) \
+	  || exit 1
+
 
 .PHONY: maybe-html-target-libbacktrace html-target-libbacktrace
 maybe-html-target-libbacktrace:
+maybe-html-target-libbacktrace: html-target-libbacktrace
+
+html-target-libbacktrace: \
+    configure-target-libbacktrace 
+	@: $(MAKE); $(unstage)
+	@[ -f $(TARGET_SUBDIR)/libbacktrace/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	echo "Doing html in $(TARGET_SUBDIR)/libbacktrace"; \
+	for flag in $(EXTRA_TARGET_FLAGS); do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	(cd $(TARGET_SUBDIR)/libbacktrace && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	           html) \
+	  || exit 1
+
 
 .PHONY: maybe-TAGS-target-libbacktrace TAGS-target-libbacktrace
 maybe-TAGS-target-libbacktrace:
+maybe-TAGS-target-libbacktrace: TAGS-target-libbacktrace
+
+TAGS-target-libbacktrace: \
+    configure-target-libbacktrace 
+	@: $(MAKE); $(unstage)
+	@[ -f $(TARGET_SUBDIR)/libbacktrace/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	echo "Doing TAGS in $(TARGET_SUBDIR)/libbacktrace"; \
+	for flag in $(EXTRA_TARGET_FLAGS); do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	(cd $(TARGET_SUBDIR)/libbacktrace && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	           TAGS) \
+	  || exit 1
+
 
 .PHONY: maybe-install-info-target-libbacktrace install-info-target-libbacktrace
 maybe-install-info-target-libbacktrace:
+maybe-install-info-target-libbacktrace: install-info-target-libbacktrace
+
+install-info-target-libbacktrace: \
+    configure-target-libbacktrace \
+    info-target-libbacktrace 
+	@: $(MAKE); $(unstage)
+	@[ -f $(TARGET_SUBDIR)/libbacktrace/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	echo "Doing install-info in $(TARGET_SUBDIR)/libbacktrace"; \
+	for flag in $(EXTRA_TARGET_FLAGS); do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	(cd $(TARGET_SUBDIR)/libbacktrace && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	           install-info) \
+	  || exit 1
+
 
 .PHONY: maybe-install-dvi-target-libbacktrace install-dvi-target-libbacktrace
 maybe-install-dvi-target-libbacktrace:
+maybe-install-dvi-target-libbacktrace: install-dvi-target-libbacktrace
+
+install-dvi-target-libbacktrace: \
+    configure-target-libbacktrace \
+    dvi-target-libbacktrace 
+	@: $(MAKE); $(unstage)
+	@[ -f $(TARGET_SUBDIR)/libbacktrace/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	echo "Doing install-dvi in $(TARGET_SUBDIR)/libbacktrace"; \
+	for flag in $(EXTRA_TARGET_FLAGS); do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	(cd $(TARGET_SUBDIR)/libbacktrace && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	           install-dvi) \
+	  || exit 1
+
 
 .PHONY: maybe-install-pdf-target-libbacktrace install-pdf-target-libbacktrace
 maybe-install-pdf-target-libbacktrace:
+maybe-install-pdf-target-libbacktrace: install-pdf-target-libbacktrace
+
+install-pdf-target-libbacktrace: \
+    configure-target-libbacktrace \
+    pdf-target-libbacktrace 
+	@: $(MAKE); $(unstage)
+	@[ -f $(TARGET_SUBDIR)/libbacktrace/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	echo "Doing install-pdf in $(TARGET_SUBDIR)/libbacktrace"; \
+	for flag in $(EXTRA_TARGET_FLAGS); do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	(cd $(TARGET_SUBDIR)/libbacktrace && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	           install-pdf) \
+	  || exit 1
+
 
 .PHONY: maybe-install-html-target-libbacktrace install-html-target-libbacktrace
 maybe-install-html-target-libbacktrace:
+maybe-install-html-target-libbacktrace: install-html-target-libbacktrace
+
+install-html-target-libbacktrace: \
+    configure-target-libbacktrace \
+    html-target-libbacktrace 
+	@: $(MAKE); $(unstage)
+	@[ -f $(TARGET_SUBDIR)/libbacktrace/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	echo "Doing install-html in $(TARGET_SUBDIR)/libbacktrace"; \
+	for flag in $(EXTRA_TARGET_FLAGS); do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	(cd $(TARGET_SUBDIR)/libbacktrace && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	           install-html) \
+	  || exit 1
+
 
 .PHONY: maybe-installcheck-target-libbacktrace installcheck-target-libbacktrace
 maybe-installcheck-target-libbacktrace:
+maybe-installcheck-target-libbacktrace: installcheck-target-libbacktrace
+
+installcheck-target-libbacktrace: \
+    configure-target-libbacktrace 
+	@: $(MAKE); $(unstage)
+	@[ -f $(TARGET_SUBDIR)/libbacktrace/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	echo "Doing installcheck in $(TARGET_SUBDIR)/libbacktrace"; \
+	for flag in $(EXTRA_TARGET_FLAGS); do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	(cd $(TARGET_SUBDIR)/libbacktrace && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	           installcheck) \
+	  || exit 1
+
 
 .PHONY: maybe-mostlyclean-target-libbacktrace mostlyclean-target-libbacktrace
 maybe-mostlyclean-target-libbacktrace:
+maybe-mostlyclean-target-libbacktrace: mostlyclean-target-libbacktrace
+
+mostlyclean-target-libbacktrace: 
+	@: $(MAKE); $(unstage)
+	@[ -f $(TARGET_SUBDIR)/libbacktrace/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	echo "Doing mostlyclean in $(TARGET_SUBDIR)/libbacktrace"; \
+	for flag in $(EXTRA_TARGET_FLAGS); do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	(cd $(TARGET_SUBDIR)/libbacktrace && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	           mostlyclean) \
+	  || exit 1
+
 
 .PHONY: maybe-clean-target-libbacktrace clean-target-libbacktrace
 maybe-clean-target-libbacktrace:
+maybe-clean-target-libbacktrace: clean-target-libbacktrace
+
+clean-target-libbacktrace: 
+	@: $(MAKE); $(unstage)
+	@[ -f $(TARGET_SUBDIR)/libbacktrace/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	echo "Doing clean in $(TARGET_SUBDIR)/libbacktrace"; \
+	for flag in $(EXTRA_TARGET_FLAGS); do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	(cd $(TARGET_SUBDIR)/libbacktrace && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	           clean) \
+	  || exit 1
+
 
 .PHONY: maybe-distclean-target-libbacktrace distclean-target-libbacktrace
 maybe-distclean-target-libbacktrace:
+maybe-distclean-target-libbacktrace: distclean-target-libbacktrace
+
+distclean-target-libbacktrace: 
+	@: $(MAKE); $(unstage)
+	@[ -f $(TARGET_SUBDIR)/libbacktrace/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	echo "Doing distclean in $(TARGET_SUBDIR)/libbacktrace"; \
+	for flag in $(EXTRA_TARGET_FLAGS); do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	(cd $(TARGET_SUBDIR)/libbacktrace && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	           distclean) \
+	  || exit 1
+
 
 .PHONY: maybe-maintainer-clean-target-libbacktrace maintainer-clean-target-libbacktrace
 maybe-maintainer-clean-target-libbacktrace:
+maybe-maintainer-clean-target-libbacktrace: maintainer-clean-target-libbacktrace
+
+maintainer-clean-target-libbacktrace: 
+	@: $(MAKE); $(unstage)
+	@[ -f $(TARGET_SUBDIR)/libbacktrace/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	echo "Doing maintainer-clean in $(TARGET_SUBDIR)/libbacktrace"; \
+	for flag in $(EXTRA_TARGET_FLAGS); do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	(cd $(TARGET_SUBDIR)/libbacktrace && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	           maintainer-clean) \
+	  || exit 1
+
 
 
 
@@ -21411,6 +21760,42 @@ maintainer-clean-target-libquadmath:
 .PHONY: configure-target-libgfortran maybe-configure-target-libgfortran
 maybe-configure-target-libgfortran:
 configure-target-libgfortran: stage_current
+maybe-configure-target-libgfortran: configure-target-libgfortran
+configure-target-libgfortran: 
+	@: $(MAKE); $(unstage)
+	@r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	echo "Checking multilib configuration for libgfortran..."; \
+	$(SHELL) $(srcdir)/mkinstalldirs $(TARGET_SUBDIR)/libgfortran; \
+	$(CC_FOR_TARGET) --print-multi-lib > $(TARGET_SUBDIR)/libgfortran/multilib.tmp 2> /dev/null; \
+	if test -r $(TARGET_SUBDIR)/libgfortran/multilib.out; then \
+	  if cmp -s $(TARGET_SUBDIR)/libgfortran/multilib.tmp $(TARGET_SUBDIR)/libgfortran/multilib.out; then \
+	    rm -f $(TARGET_SUBDIR)/libgfortran/multilib.tmp; \
+	  else \
+	    rm -f $(TARGET_SUBDIR)/libgfortran/Makefile; \
+	    mv $(TARGET_SUBDIR)/libgfortran/multilib.tmp $(TARGET_SUBDIR)/libgfortran/multilib.out; \
+	  fi; \
+	else \
+	  mv $(TARGET_SUBDIR)/libgfortran/multilib.tmp $(TARGET_SUBDIR)/libgfortran/multilib.out; \
+	fi; \
+	test ! -f $(TARGET_SUBDIR)/libgfortran/Makefile || exit 0; \
+	$(SHELL) $(srcdir)/mkinstalldirs $(TARGET_SUBDIR)/libgfortran; \
+	$(NORMAL_TARGET_EXPORTS)  \
+	echo Configuring in $(TARGET_SUBDIR)/libgfortran; \
+	cd "$(TARGET_SUBDIR)/libgfortran" || exit 1; \
+	case $(srcdir) in \
+	  /* | [A-Za-z]:[\\/]*) topdir=$(srcdir) ;; \
+	  *) topdir=`echo $(TARGET_SUBDIR)/libgfortran/ | \
+		sed -e 's,\./,,g' -e 's,[^/]*/,../,g' `$(srcdir) ;; \
+	esac; \
+	module_srcdir=libgfortran; \
+	rm -f no-such-file || : ; \
+	CONFIG_SITE=no-such-file $(SHELL) \
+	  $$s/$$module_srcdir/configure \
+	  --srcdir=$${topdir}/$$module_srcdir \
+	  $(TARGET_CONFIGARGS) --build=${build_alias} --host=${target_alias} \
+	  --target=${target_alias}  \
+	  || exit 1
 
 
 
@@ -21419,6 +21804,16 @@ configure-target-libgfortran: stage_current
 .PHONY: all-target-libgfortran maybe-all-target-libgfortran
 maybe-all-target-libgfortran:
 all-target-libgfortran: stage_current
+TARGET-target-libgfortran=all
+maybe-all-target-libgfortran: all-target-libgfortran
+all-target-libgfortran: configure-target-libgfortran
+	@: $(MAKE); $(unstage)
+	@r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS)  \
+	(cd $(TARGET_SUBDIR)/libgfortran && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) $(EXTRA_TARGET_FLAGS)   \
+		$(TARGET-target-libgfortran))
 
 
 
@@ -21426,56 +21821,380 @@ all-target-libgfortran: stage_current
 
 .PHONY: check-target-libgfortran maybe-check-target-libgfortran
 maybe-check-target-libgfortran:
+maybe-check-target-libgfortran: check-target-libgfortran
+
+check-target-libgfortran:
+	@: $(MAKE); $(unstage)
+	@r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	(cd $(TARGET_SUBDIR)/libgfortran && \
+	  $(MAKE) $(TARGET_FLAGS_TO_PASS)   check)
+
 
 .PHONY: install-target-libgfortran maybe-install-target-libgfortran
 maybe-install-target-libgfortran:
+maybe-install-target-libgfortran: install-target-libgfortran
+
+install-target-libgfortran: installdirs
+	@: $(MAKE); $(unstage)
+	@r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	(cd $(TARGET_SUBDIR)/libgfortran && \
+	  $(MAKE) $(TARGET_FLAGS_TO_PASS)  install)
+
 
 .PHONY: install-strip-target-libgfortran maybe-install-strip-target-libgfortran
 maybe-install-strip-target-libgfortran:
+maybe-install-strip-target-libgfortran: install-strip-target-libgfortran
+
+install-strip-target-libgfortran: installdirs
+	@: $(MAKE); $(unstage)
+	@r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	(cd $(TARGET_SUBDIR)/libgfortran && \
+	  $(MAKE) $(TARGET_FLAGS_TO_PASS)  install-strip)
+
 
 # Other targets (info, dvi, pdf, etc.)
 
 .PHONY: maybe-info-target-libgfortran info-target-libgfortran
 maybe-info-target-libgfortran:
+maybe-info-target-libgfortran: info-target-libgfortran
+
+info-target-libgfortran: \
+    configure-target-libgfortran 
+	@: $(MAKE); $(unstage)
+	@[ -f $(TARGET_SUBDIR)/libgfortran/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	echo "Doing info in $(TARGET_SUBDIR)/libgfortran"; \
+	for flag in $(EXTRA_TARGET_FLAGS); do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	(cd $(TARGET_SUBDIR)/libgfortran && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	           info) \
+	  || exit 1
+
 
 .PHONY: maybe-dvi-target-libgfortran dvi-target-libgfortran
 maybe-dvi-target-libgfortran:
+maybe-dvi-target-libgfortran: dvi-target-libgfortran
+
+dvi-target-libgfortran: \
+    configure-target-libgfortran 
+	@: $(MAKE); $(unstage)
+	@[ -f $(TARGET_SUBDIR)/libgfortran/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	echo "Doing dvi in $(TARGET_SUBDIR)/libgfortran"; \
+	for flag in $(EXTRA_TARGET_FLAGS); do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	(cd $(TARGET_SUBDIR)/libgfortran && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	           dvi) \
+	  || exit 1
+
 
 .PHONY: maybe-pdf-target-libgfortran pdf-target-libgfortran
 maybe-pdf-target-libgfortran:
+maybe-pdf-target-libgfortran: pdf-target-libgfortran
+
+pdf-target-libgfortran: \
+    configure-target-libgfortran 
+	@: $(MAKE); $(unstage)
+	@[ -f $(TARGET_SUBDIR)/libgfortran/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	echo "Doing pdf in $(TARGET_SUBDIR)/libgfortran"; \
+	for flag in $(EXTRA_TARGET_FLAGS); do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	(cd $(TARGET_SUBDIR)/libgfortran && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	           pdf) \
+	  || exit 1
+
 
 .PHONY: maybe-html-target-libgfortran html-target-libgfortran
 maybe-html-target-libgfortran:
+maybe-html-target-libgfortran: html-target-libgfortran
+
+html-target-libgfortran: \
+    configure-target-libgfortran 
+	@: $(MAKE); $(unstage)
+	@[ -f $(TARGET_SUBDIR)/libgfortran/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	echo "Doing html in $(TARGET_SUBDIR)/libgfortran"; \
+	for flag in $(EXTRA_TARGET_FLAGS); do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	(cd $(TARGET_SUBDIR)/libgfortran && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	           html) \
+	  || exit 1
+
 
 .PHONY: maybe-TAGS-target-libgfortran TAGS-target-libgfortran
 maybe-TAGS-target-libgfortran:
+maybe-TAGS-target-libgfortran: TAGS-target-libgfortran
+
+TAGS-target-libgfortran: \
+    configure-target-libgfortran 
+	@: $(MAKE); $(unstage)
+	@[ -f $(TARGET_SUBDIR)/libgfortran/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	echo "Doing TAGS in $(TARGET_SUBDIR)/libgfortran"; \
+	for flag in $(EXTRA_TARGET_FLAGS); do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	(cd $(TARGET_SUBDIR)/libgfortran && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	           TAGS) \
+	  || exit 1
+
 
 .PHONY: maybe-install-info-target-libgfortran install-info-target-libgfortran
 maybe-install-info-target-libgfortran:
+maybe-install-info-target-libgfortran: install-info-target-libgfortran
+
+install-info-target-libgfortran: \
+    configure-target-libgfortran \
+    info-target-libgfortran 
+	@: $(MAKE); $(unstage)
+	@[ -f $(TARGET_SUBDIR)/libgfortran/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	echo "Doing install-info in $(TARGET_SUBDIR)/libgfortran"; \
+	for flag in $(EXTRA_TARGET_FLAGS); do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	(cd $(TARGET_SUBDIR)/libgfortran && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	           install-info) \
+	  || exit 1
+
 
 .PHONY: maybe-install-dvi-target-libgfortran install-dvi-target-libgfortran
 maybe-install-dvi-target-libgfortran:
+maybe-install-dvi-target-libgfortran: install-dvi-target-libgfortran
+
+install-dvi-target-libgfortran: \
+    configure-target-libgfortran \
+    dvi-target-libgfortran 
+	@: $(MAKE); $(unstage)
+	@[ -f $(TARGET_SUBDIR)/libgfortran/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	echo "Doing install-dvi in $(TARGET_SUBDIR)/libgfortran"; \
+	for flag in $(EXTRA_TARGET_FLAGS); do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	(cd $(TARGET_SUBDIR)/libgfortran && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	           install-dvi) \
+	  || exit 1
+
 
 .PHONY: maybe-install-pdf-target-libgfortran install-pdf-target-libgfortran
 maybe-install-pdf-target-libgfortran:
+maybe-install-pdf-target-libgfortran: install-pdf-target-libgfortran
+
+install-pdf-target-libgfortran: \
+    configure-target-libgfortran \
+    pdf-target-libgfortran 
+	@: $(MAKE); $(unstage)
+	@[ -f $(TARGET_SUBDIR)/libgfortran/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	echo "Doing install-pdf in $(TARGET_SUBDIR)/libgfortran"; \
+	for flag in $(EXTRA_TARGET_FLAGS); do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	(cd $(TARGET_SUBDIR)/libgfortran && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	           install-pdf) \
+	  || exit 1
+
 
 .PHONY: maybe-install-html-target-libgfortran install-html-target-libgfortran
 maybe-install-html-target-libgfortran:
+maybe-install-html-target-libgfortran: install-html-target-libgfortran
+
+install-html-target-libgfortran: \
+    configure-target-libgfortran \
+    html-target-libgfortran 
+	@: $(MAKE); $(unstage)
+	@[ -f $(TARGET_SUBDIR)/libgfortran/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	echo "Doing install-html in $(TARGET_SUBDIR)/libgfortran"; \
+	for flag in $(EXTRA_TARGET_FLAGS); do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	(cd $(TARGET_SUBDIR)/libgfortran && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	           install-html) \
+	  || exit 1
+
 
 .PHONY: maybe-installcheck-target-libgfortran installcheck-target-libgfortran
 maybe-installcheck-target-libgfortran:
+maybe-installcheck-target-libgfortran: installcheck-target-libgfortran
+
+installcheck-target-libgfortran: \
+    configure-target-libgfortran 
+	@: $(MAKE); $(unstage)
+	@[ -f $(TARGET_SUBDIR)/libgfortran/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	echo "Doing installcheck in $(TARGET_SUBDIR)/libgfortran"; \
+	for flag in $(EXTRA_TARGET_FLAGS); do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	(cd $(TARGET_SUBDIR)/libgfortran && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	           installcheck) \
+	  || exit 1
+
 
 .PHONY: maybe-mostlyclean-target-libgfortran mostlyclean-target-libgfortran
 maybe-mostlyclean-target-libgfortran:
+maybe-mostlyclean-target-libgfortran: mostlyclean-target-libgfortran
+
+mostlyclean-target-libgfortran: 
+	@: $(MAKE); $(unstage)
+	@[ -f $(TARGET_SUBDIR)/libgfortran/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	echo "Doing mostlyclean in $(TARGET_SUBDIR)/libgfortran"; \
+	for flag in $(EXTRA_TARGET_FLAGS); do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	(cd $(TARGET_SUBDIR)/libgfortran && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	           mostlyclean) \
+	  || exit 1
+
 
 .PHONY: maybe-clean-target-libgfortran clean-target-libgfortran
 maybe-clean-target-libgfortran:
+maybe-clean-target-libgfortran: clean-target-libgfortran
+
+clean-target-libgfortran: 
+	@: $(MAKE); $(unstage)
+	@[ -f $(TARGET_SUBDIR)/libgfortran/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	echo "Doing clean in $(TARGET_SUBDIR)/libgfortran"; \
+	for flag in $(EXTRA_TARGET_FLAGS); do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	(cd $(TARGET_SUBDIR)/libgfortran && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	           clean) \
+	  || exit 1
+
 
 .PHONY: maybe-distclean-target-libgfortran distclean-target-libgfortran
 maybe-distclean-target-libgfortran:
+maybe-distclean-target-libgfortran: distclean-target-libgfortran
+
+distclean-target-libgfortran: 
+	@: $(MAKE); $(unstage)
+	@[ -f $(TARGET_SUBDIR)/libgfortran/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	echo "Doing distclean in $(TARGET_SUBDIR)/libgfortran"; \
+	for flag in $(EXTRA_TARGET_FLAGS); do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	(cd $(TARGET_SUBDIR)/libgfortran && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	           distclean) \
+	  || exit 1
+
 
 .PHONY: maybe-maintainer-clean-target-libgfortran maintainer-clean-target-libgfortran
 maybe-maintainer-clean-target-libgfortran:
+maybe-maintainer-clean-target-libgfortran: maintainer-clean-target-libgfortran
+
+maintainer-clean-target-libgfortran: 
+	@: $(MAKE); $(unstage)
+	@[ -f $(TARGET_SUBDIR)/libgfortran/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	echo "Doing maintainer-clean in $(TARGET_SUBDIR)/libgfortran"; \
+	for flag in $(EXTRA_TARGET_FLAGS); do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	(cd $(TARGET_SUBDIR)/libgfortran && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	           maintainer-clean) \
+	  || exit 1
+
 
 
 
@@ -21484,6 +22203,42 @@ maybe-maintainer-clean-target-libgfortran:
 .PHONY: configure-target-libobjc maybe-configure-target-libobjc
 maybe-configure-target-libobjc:
 configure-target-libobjc: stage_current
+maybe-configure-target-libobjc: configure-target-libobjc
+configure-target-libobjc: 
+	@: $(MAKE); $(unstage)
+	@r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	echo "Checking multilib configuration for libobjc..."; \
+	$(SHELL) $(srcdir)/mkinstalldirs $(TARGET_SUBDIR)/libobjc; \
+	$(CC_FOR_TARGET) --print-multi-lib > $(TARGET_SUBDIR)/libobjc/multilib.tmp 2> /dev/null; \
+	if test -r $(TARGET_SUBDIR)/libobjc/multilib.out; then \
+	  if cmp -s $(TARGET_SUBDIR)/libobjc/multilib.tmp $(TARGET_SUBDIR)/libobjc/multilib.out; then \
+	    rm -f $(TARGET_SUBDIR)/libobjc/multilib.tmp; \
+	  else \
+	    rm -f $(TARGET_SUBDIR)/libobjc/Makefile; \
+	    mv $(TARGET_SUBDIR)/libobjc/multilib.tmp $(TARGET_SUBDIR)/libobjc/multilib.out; \
+	  fi; \
+	else \
+	  mv $(TARGET_SUBDIR)/libobjc/multilib.tmp $(TARGET_SUBDIR)/libobjc/multilib.out; \
+	fi; \
+	test ! -f $(TARGET_SUBDIR)/libobjc/Makefile || exit 0; \
+	$(SHELL) $(srcdir)/mkinstalldirs $(TARGET_SUBDIR)/libobjc; \
+	$(NORMAL_TARGET_EXPORTS)  \
+	echo Configuring in $(TARGET_SUBDIR)/libobjc; \
+	cd "$(TARGET_SUBDIR)/libobjc" || exit 1; \
+	case $(srcdir) in \
+	  /* | [A-Za-z]:[\\/]*) topdir=$(srcdir) ;; \
+	  *) topdir=`echo $(TARGET_SUBDIR)/libobjc/ | \
+		sed -e 's,\./,,g' -e 's,[^/]*/,../,g' `$(srcdir) ;; \
+	esac; \
+	module_srcdir=libobjc; \
+	rm -f no-such-file || : ; \
+	CONFIG_SITE=no-such-file $(SHELL) \
+	  $$s/$$module_srcdir/configure \
+	  --srcdir=$${topdir}/$$module_srcdir \
+	  $(TARGET_CONFIGARGS) --build=${build_alias} --host=${target_alias} \
+	  --target=${target_alias}  \
+	  || exit 1
 
 
 
@@ -21492,6 +22247,16 @@ configure-target-libobjc: stage_current
 .PHONY: all-target-libobjc maybe-all-target-libobjc
 maybe-all-target-libobjc:
 all-target-libobjc: stage_current
+TARGET-target-libobjc=all
+maybe-all-target-libobjc: all-target-libobjc
+all-target-libobjc: configure-target-libobjc
+	@: $(MAKE); $(unstage)
+	@r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS)  \
+	(cd $(TARGET_SUBDIR)/libobjc && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) $(EXTRA_TARGET_FLAGS)   \
+		$(TARGET-target-libobjc))
 
 
 
@@ -21499,56 +22264,347 @@ all-target-libobjc: stage_current
 
 .PHONY: check-target-libobjc maybe-check-target-libobjc
 maybe-check-target-libobjc:
+maybe-check-target-libobjc: check-target-libobjc
+
+check-target-libobjc:
+	@: $(MAKE); $(unstage)
+	@r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	(cd $(TARGET_SUBDIR)/libobjc && \
+	  $(MAKE) $(TARGET_FLAGS_TO_PASS)   check)
+
 
 .PHONY: install-target-libobjc maybe-install-target-libobjc
 maybe-install-target-libobjc:
+maybe-install-target-libobjc: install-target-libobjc
+
+install-target-libobjc: installdirs
+	@: $(MAKE); $(unstage)
+	@r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	(cd $(TARGET_SUBDIR)/libobjc && \
+	  $(MAKE) $(TARGET_FLAGS_TO_PASS)  install)
+
 
 .PHONY: install-strip-target-libobjc maybe-install-strip-target-libobjc
 maybe-install-strip-target-libobjc:
+maybe-install-strip-target-libobjc: install-strip-target-libobjc
+
+install-strip-target-libobjc: installdirs
+	@: $(MAKE); $(unstage)
+	@r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	(cd $(TARGET_SUBDIR)/libobjc && \
+	  $(MAKE) $(TARGET_FLAGS_TO_PASS)  install-strip)
+
 
 # Other targets (info, dvi, pdf, etc.)
 
 .PHONY: maybe-info-target-libobjc info-target-libobjc
 maybe-info-target-libobjc:
+maybe-info-target-libobjc: info-target-libobjc
+
+info-target-libobjc: \
+    configure-target-libobjc 
+	@: $(MAKE); $(unstage)
+	@[ -f $(TARGET_SUBDIR)/libobjc/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	echo "Doing info in $(TARGET_SUBDIR)/libobjc"; \
+	for flag in $(EXTRA_TARGET_FLAGS); do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	(cd $(TARGET_SUBDIR)/libobjc && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	           info) \
+	  || exit 1
+
 
 .PHONY: maybe-dvi-target-libobjc dvi-target-libobjc
 maybe-dvi-target-libobjc:
+maybe-dvi-target-libobjc: dvi-target-libobjc
+
+dvi-target-libobjc: \
+    configure-target-libobjc 
+	@: $(MAKE); $(unstage)
+	@[ -f $(TARGET_SUBDIR)/libobjc/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	echo "Doing dvi in $(TARGET_SUBDIR)/libobjc"; \
+	for flag in $(EXTRA_TARGET_FLAGS); do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	(cd $(TARGET_SUBDIR)/libobjc && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	           dvi) \
+	  || exit 1
+
 
 .PHONY: maybe-pdf-target-libobjc pdf-target-libobjc
 maybe-pdf-target-libobjc:
+maybe-pdf-target-libobjc: pdf-target-libobjc
+
+pdf-target-libobjc: \
+    configure-target-libobjc 
+	@: $(MAKE); $(unstage)
+	@[ -f $(TARGET_SUBDIR)/libobjc/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	echo "Doing pdf in $(TARGET_SUBDIR)/libobjc"; \
+	for flag in $(EXTRA_TARGET_FLAGS); do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	(cd $(TARGET_SUBDIR)/libobjc && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	           pdf) \
+	  || exit 1
+
 
 .PHONY: maybe-html-target-libobjc html-target-libobjc
 maybe-html-target-libobjc:
+maybe-html-target-libobjc: html-target-libobjc
+
+html-target-libobjc: \
+    configure-target-libobjc 
+	@: $(MAKE); $(unstage)
+	@[ -f $(TARGET_SUBDIR)/libobjc/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	echo "Doing html in $(TARGET_SUBDIR)/libobjc"; \
+	for flag in $(EXTRA_TARGET_FLAGS); do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	(cd $(TARGET_SUBDIR)/libobjc && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	           html) \
+	  || exit 1
+
 
 .PHONY: maybe-TAGS-target-libobjc TAGS-target-libobjc
 maybe-TAGS-target-libobjc:
+maybe-TAGS-target-libobjc: TAGS-target-libobjc
+
+# libobjc doesn't support TAGS.
+TAGS-target-libobjc:
+
 
 .PHONY: maybe-install-info-target-libobjc install-info-target-libobjc
 maybe-install-info-target-libobjc:
+maybe-install-info-target-libobjc: install-info-target-libobjc
+
+install-info-target-libobjc: \
+    configure-target-libobjc \
+    info-target-libobjc 
+	@: $(MAKE); $(unstage)
+	@[ -f $(TARGET_SUBDIR)/libobjc/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	echo "Doing install-info in $(TARGET_SUBDIR)/libobjc"; \
+	for flag in $(EXTRA_TARGET_FLAGS); do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	(cd $(TARGET_SUBDIR)/libobjc && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	           install-info) \
+	  || exit 1
+
 
 .PHONY: maybe-install-dvi-target-libobjc install-dvi-target-libobjc
 maybe-install-dvi-target-libobjc:
+maybe-install-dvi-target-libobjc: install-dvi-target-libobjc
+
+# libobjc doesn't support install-dvi.
+install-dvi-target-libobjc:
+
 
 .PHONY: maybe-install-pdf-target-libobjc install-pdf-target-libobjc
 maybe-install-pdf-target-libobjc:
+maybe-install-pdf-target-libobjc: install-pdf-target-libobjc
+
+install-pdf-target-libobjc: \
+    configure-target-libobjc \
+    pdf-target-libobjc 
+	@: $(MAKE); $(unstage)
+	@[ -f $(TARGET_SUBDIR)/libobjc/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	echo "Doing install-pdf in $(TARGET_SUBDIR)/libobjc"; \
+	for flag in $(EXTRA_TARGET_FLAGS); do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	(cd $(TARGET_SUBDIR)/libobjc && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	           install-pdf) \
+	  || exit 1
+
 
 .PHONY: maybe-install-html-target-libobjc install-html-target-libobjc
 maybe-install-html-target-libobjc:
+maybe-install-html-target-libobjc: install-html-target-libobjc
+
+install-html-target-libobjc: \
+    configure-target-libobjc \
+    html-target-libobjc 
+	@: $(MAKE); $(unstage)
+	@[ -f $(TARGET_SUBDIR)/libobjc/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	echo "Doing install-html in $(TARGET_SUBDIR)/libobjc"; \
+	for flag in $(EXTRA_TARGET_FLAGS); do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	(cd $(TARGET_SUBDIR)/libobjc && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	           install-html) \
+	  || exit 1
+
 
 .PHONY: maybe-installcheck-target-libobjc installcheck-target-libobjc
 maybe-installcheck-target-libobjc:
+maybe-installcheck-target-libobjc: installcheck-target-libobjc
+
+installcheck-target-libobjc: \
+    configure-target-libobjc 
+	@: $(MAKE); $(unstage)
+	@[ -f $(TARGET_SUBDIR)/libobjc/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	echo "Doing installcheck in $(TARGET_SUBDIR)/libobjc"; \
+	for flag in $(EXTRA_TARGET_FLAGS); do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	(cd $(TARGET_SUBDIR)/libobjc && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	           installcheck) \
+	  || exit 1
+
 
 .PHONY: maybe-mostlyclean-target-libobjc mostlyclean-target-libobjc
 maybe-mostlyclean-target-libobjc:
+maybe-mostlyclean-target-libobjc: mostlyclean-target-libobjc
+
+mostlyclean-target-libobjc: 
+	@: $(MAKE); $(unstage)
+	@[ -f $(TARGET_SUBDIR)/libobjc/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	echo "Doing mostlyclean in $(TARGET_SUBDIR)/libobjc"; \
+	for flag in $(EXTRA_TARGET_FLAGS); do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	(cd $(TARGET_SUBDIR)/libobjc && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	           mostlyclean) \
+	  || exit 1
+
 
 .PHONY: maybe-clean-target-libobjc clean-target-libobjc
 maybe-clean-target-libobjc:
+maybe-clean-target-libobjc: clean-target-libobjc
+
+clean-target-libobjc: 
+	@: $(MAKE); $(unstage)
+	@[ -f $(TARGET_SUBDIR)/libobjc/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	echo "Doing clean in $(TARGET_SUBDIR)/libobjc"; \
+	for flag in $(EXTRA_TARGET_FLAGS); do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	(cd $(TARGET_SUBDIR)/libobjc && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	           clean) \
+	  || exit 1
+
 
 .PHONY: maybe-distclean-target-libobjc distclean-target-libobjc
 maybe-distclean-target-libobjc:
+maybe-distclean-target-libobjc: distclean-target-libobjc
+
+distclean-target-libobjc: 
+	@: $(MAKE); $(unstage)
+	@[ -f $(TARGET_SUBDIR)/libobjc/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	echo "Doing distclean in $(TARGET_SUBDIR)/libobjc"; \
+	for flag in $(EXTRA_TARGET_FLAGS); do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	(cd $(TARGET_SUBDIR)/libobjc && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	           distclean) \
+	  || exit 1
+
 
 .PHONY: maybe-maintainer-clean-target-libobjc maintainer-clean-target-libobjc
 maybe-maintainer-clean-target-libobjc:
+maybe-maintainer-clean-target-libobjc: maintainer-clean-target-libobjc
+
+maintainer-clean-target-libobjc: 
+	@: $(MAKE); $(unstage)
+	@[ -f $(TARGET_SUBDIR)/libobjc/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(NORMAL_TARGET_EXPORTS) \
+	echo "Doing maintainer-clean in $(TARGET_SUBDIR)/libobjc"; \
+	for flag in $(EXTRA_TARGET_FLAGS); do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	(cd $(TARGET_SUBDIR)/libobjc && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	           maintainer-clean) \
+	  || exit 1
+
 
 
 
@@ -23524,14 +24580,15 @@ stage1-end::
 # reconfigured either.
 .PHONY: stage1-bubble
 stage1-bubble:: 
-    @r=${PWD_COMMAND}; export r; \
-    s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
-    if test -f stage1-lean ; then \
-      echo Skipping rebuild of stage1; \
-    else \
-      $(MAKE) stage1-start; \
-      $(MAKE) $(RECURSE_FLAGS_TO_PASS) all-stage1; \
-    fi
+	@r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	if test -f stage1-lean ; then \
+	  echo Skipping rebuild of stage1; \
+	else \
+	  $(MAKE) stage1-start; \
+	  $(MAKE) $(RECURSE_FLAGS_TO_PASS) all-stage1; \
+	fi
+
 .PHONY: all-stage1 clean-stage1
 do-clean: clean-stage1
 
@@ -23649,13 +24706,16 @@ stage2-end::
 .PHONY: stage2-bubble
 stage2-bubble:: stage1-bubble
 	@r=`${PWD_COMMAND}`; export r; \
-	s=`cd $(srcdir) && ${PWD_COMMAND}`; export s; \
-	if test -f stage2-lean || test -f stage1-lean; then \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	if test -f stage2-lean || test -f stage1-lean ; then \
 	  echo Skipping rebuild of stage2; \
 	else \
 	  $(MAKE) stage2-start; \
 	  $(MAKE) $(RECURSE_FLAGS_TO_PASS) all-stage2; \
 	fi
+
+.PHONY: all-stage2 clean-stage2
+do-clean: clean-stage2
 
 # FIXME: Will not need to be conditional when toplevel bootstrap is the
 # only possibility, but now it conflicts with no-bootstrap rules
