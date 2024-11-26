@@ -31,7 +31,7 @@ VPATH = ../../../gcc-14.2.0/libiberty/testsuite
 SHELL = C:/msys64/usr/bin/sh.exe
 
 CC = x86_64-w64-mingw32-gcc
-CFLAGS = -g
+CFLAGS = -I/c/libidn2/gettext-0.22.5/libtextstyle/lib  
 LIBCFLAGS = $(CFLAGS) $(LDFLAGS)
 
 # Multilib support variables.
